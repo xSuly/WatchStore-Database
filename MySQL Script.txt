@@ -1,0 +1,292 @@
+create database Magazin_ceasuri;
+
+use Magazin_ceasuri;
+
+---------------------------------------
+-- creare tabel magazin
+create table magazin
+(   magazin_id numeric(5),
+    nume varchar(20), 
+    program varchar(20),
+    nr_telefon varchar(11),
+    email varchar(50),
+    site_web varchar(50),
+    constraint magazin_magazinId_PK primary key(magazin_id),
+    constraint magazin_nume_nn check (nume is not null),
+    constraint magazin_program_nn check (program is not null),
+    constraint magazin_nrTlf_nn check (nr_telefon is not null),
+    constraint magazin_nrTlf_U unique (nr_telefon),
+    constraint magazin_nrTlf_C check (length(nr_telefon)=10),
+    constraint magazin_email_nn check (email is not null),
+    constraint magazin_email_u unique (email),
+    constraint magazin_siteWeb_nn check (site_web is not null),
+    constraint magazin_siteWeb_U unique (site_web)
+);
+
+-- tabelul Ceas
+create table ceas
+(   ceas_id numeric(6), 
+    nume varchar(25), 
+    model varchar(25),
+    pret numeric(10,2), 
+    tip_mecanism char(8), 
+    tip_curea char(10),
+    dimensiune_geam numeric(2), 
+    culoare varchar(20), 
+    afisaj char(10),
+    an_fabricatie numeric(4),
+    constraint ceas_ceasId_Pk primary key (ceas_id),
+    constraint ceas_nume_nn check (nume is not null),
+    constraint ceas_model_nn check (pret is not null),
+    constraint ceas_pret_nn check (pret is not null),
+    constraint ceas_tipMecanism_nn check (tip_mecanism is not null),
+    constraint ceas_tipMecanism_c check (tip_mecanism in ('Quartz','Mecanic')),
+    constraint ceas_tipCurea_nn check (tip_curea is not null),
+    constraint ceas_tipCurea_c check (tip_curea in ('Silicon','Material','Zale','Piele')),
+    constraint ceas_dimensiuneGeam_nn check (dimensiune_geam is not null),
+    constraint ceas_culoare_nn check (culoare is not null),
+    constraint ceas_afisaj_nn check (afisaj is not null),
+    constraint ceas_afisaj_c check (afisaj in ('Analogic','Digital')),
+    constraint ceas_anFabricatie_nn check (an_fabricatie is not null)
+);
+
+-- tabelul Brand_producator
+create table Brand_producator
+(   brand_id numeric(6),
+    nume varchar(15),
+    tara_origine varchar(20), 
+    constraint bp_brandId_PK primary key (brand_id),
+    constraint bp_nume_nn check (nume is not null),
+    constraint bp_taraOrigine_nn check (tara_origine is not null)
+);
+
+-- tabelul Oras
+create table Oras
+(   oras_id numeric(6),
+    nume varchar(15),
+    tara varchar(15),
+    cod_postal numeric(6),
+    constraint oras_orasId_PK primary key (oras_id),
+    constraint oras_nume_nn check (nume is not null),
+    constraint oras_tara_nn check (tara is not null),
+    constraint oras_codPostal_nn check (cod_postal is not null),
+    constraint oras_codPostal_u unique (cod_postal)
+);
+
+-- tabelul Client
+create table Client
+(   client_id numeric(6),
+    nume varchar(20),
+    prenume varchar(20), 
+    nr_telefon varchar(11),
+    email varchar(30), 
+    strada varchar(50), 
+    oras_id numeric(6), 
+	constraint client_clientId_PK primary key (client_id),
+	constraint client_nume_nn check (nume is not null),
+	constraint client_prenume_nn check (prenume is not null),
+	constraint client_nrTlf_nn check (nr_telefon is not null),
+	constraint client_nrTlf_c check (length(nr_telefon)=10),
+	constraint client_nrTlf_u unique (nr_telefon),
+	constraint client_email_nn check (email is not null),
+	constraint client_email_u unique (email),
+	constraint client_strada_nn check (strada is not null),
+	constraint client_orasId_fk foreign key (oras_id) references Oras (oras_id) on delete set null
+);
+
+-- tabelul Comanda
+create table comanda
+(   comanda_id numeric(6),
+	client_id numeric(6),
+    data_amplasare date, 
+    data_onorare_comanda date, 
+    constraint comanda_comandaId_PK primary key (comanda_id),
+    constraint comanda_clientId_fk foreign key (client_id) references Client (client_id) on delete cascade,
+    constraint comanda_dataAmplasare_nn check (data_amplasare is not null),
+    constraint comanda_dataOnorare_nn check (data_onorare_comanda is not null)
+);
+
+-- tabelul Firma_De_Livrat
+create table firma_de_livrat
+(   firma_id numeric(6), 
+    nume varchar(15), 
+    comanda_id numeric(6),
+    constraint firmalivrat_firmaId_PK primary key (firma_id),
+    constraint firmalivrat_nume_nn check (nume is not null),
+    constraint firmalivrat_comandaId_fk foreign key (comanda_id) references Comanda (comanda_id) on delete cascade
+);
+
+-- tabelul Plasat
+create table plasat
+(   ceas_id numeric(6), 
+    comanda_id numeric(6), 
+    constraint plasat_ceasId_FK foreign key (ceas_id) references ceas (ceas_id) on delete cascade,
+    constraint plasat_comandaId_FK foreign key (comanda_id) references comanda (comanda_id) on delete cascade,
+    constraint plasat_pk primary key (ceas_id, comanda_id)
+);
+
+-- tabelul Locatie
+create table locatie
+(   locatie_id numeric(6), 
+    oras varchar(15),
+    strada varchar(15), 
+    magazin_id numeric(5),
+    constraint locatie_locatieId_PK primary key (locatie_id),
+    constraint locatie_oras_nn check (oras is not null),
+    constraint locatie_strada_nn check (strada is not null),
+    constraint locatie_magazinId_fk foreign key (magazin_id) references Magazin (magazin_id) on delete set null
+);
+
+-- tabelul Furnizeaza_ceas
+create table furnizeaza_ceas
+(   ceas_id numeric(6),
+    brand_id numeric(6),
+    constraint furnizeaza_ceas_ceasId_FK foreign key (ceas_id) references ceas (ceas_id) on delete cascade,
+     constraint furnizeaza_ceas_comandaId_FK foreign key (brand_id) references brand_producator (brand_id) on delete cascade,
+    constraint furnizeaza_ceas_pk primary key (ceas_id, brand_id)
+);
+
+-- tabelul Detine_ceas
+create table detine_ceas
+(   magazin_id numeric(5),
+    ceas_id numeric(6), 
+    cantitate_model numeric(2),
+    constraint detineceas_magazinId_FK foreign key (magazin_id) references magazin (magazin_id) on delete cascade,
+    constraint detineceas_ceasId_FK foreign key (ceas_id) references ceas (ceas_id) on delete cascade,
+    constraint detineceas_pk primary key (magazin_id, ceas_id)
+);
+
+insert into magazin
+values(10000, 'Watchshop', '08-16', '0769123456', 'watchshop@gmail.com', 'watchshop.ro');
+insert into magazin
+values(10001, 'BBShop', '08-20', '0769456123', 'bbshop@gmail.com', 'bbshop.ro');
+insert into magazin
+values(10002, 'Victoria Watches', '10-18', '0769654321', 'victoriawatches@gmail.com', 'victoriawatches.ro');
+insert into magazin
+values(10003, 'TopWatch', '10-20', '0769654123', 'topwatch@gmail.com', 'topshop.ro');
+insert into magazin
+values(10004, 'AmazingWatches', '08-18', '0769000123', 'amazingwatches@gmail.com', 'amazingwatches.ro');
+
+select *
+from magazin;
+
+insert into locatie
+values(250000, 'Ramnicu Sarat', 'B-dul 1 Dec1918', 10000);
+insert into locatie
+values(250001, 'Buzau', 'Principatelor', 10001);
+insert into locatie
+values(250002, 'Focsani', 'Str. Milcov', 10002);
+insert into locatie
+values(250003, 'Bucuresti', 'Iuliu Maniu', 10003);
+insert into locatie
+values(250004, 'Targoviste', 'B-dul Unirii', 10004);
+
+insert into ceas
+values(500000, 'Rolex', 'Mad Paris', 4350, 'Mecanic', 'Zale', 40, 'Gri', 'Analogic', 2020);
+insert into ceas
+values(500001, 'Fossil', 'Townsman', 827.99, 'Mecanic', 'Zale', 42, 'Gri', 'Analogic', 2018);
+insert into ceas
+values(500002, 'Atlantic', 'Superocean', 26900.00, 'Quartz', 'Piele', 40, 'Negru', 'Analogic', 2019);
+insert into ceas
+values(500003, 'ARMANI EXCHANGE', 'Armani Digital', 1049.95, 'Quartz', 'Zale', 41, 'Auriu', 'Digital', 2016);
+insert into ceas
+values(500004, 'Samsung', 'Galaxy Watch4 Classic', 1405.99, 'Mecanic', 'Silicon', 46, 'Alb', 'Digital', 2021);
+
+insert into detine_ceas
+values(10000, 500000, 2);
+insert into detine_ceas
+values(10001, 500001, 4);
+insert into detine_ceas
+values(10002, 500002, 3);
+insert into detine_ceas
+values(10003, 500003, 5);
+insert into detine_ceas
+values(10004, 500004, 15);
+
+insert into brand_producator
+values(800000, 'Rolex', 'Elvetia');
+insert into brand_producator
+values(800001, 'Fossil', 'Elvetia');
+insert into brand_producator
+values(800002, 'Atlantic', 'Elvetia');
+insert into brand_producator
+values(800003, 'ARMANI EXCHANGE', 'Italia');
+insert into brand_producator
+values(800004, 'Samsung', 'Coreea de Sud');
+
+insert into furnizeaza_ceas
+values(500000, 800000);
+insert into furnizeaza_ceas
+values(500001, 800001);
+insert into furnizeaza_ceas
+values(500002, 800002);
+insert into furnizeaza_ceas
+values(500003, 800003);
+insert into furnizeaza_ceas
+values(500004, 800004);
+
+insert into oras
+values (900000, 'Bucuresti', 'Romania', 400000);
+insert into oras
+values (900001, 'Cluj-Napoca', 'Romania', 400001);
+insert into oras
+values (900002, 'Varsovia', 'Polonia', 400002);
+insert into oras
+values (900003, 'Madrid', 'Spain', 400003);
+insert into oras
+values (900004, 'Amsterdam', 'Olanda', 400004);
+
+insert into client
+values(150000, 'Serban', 'Cosmin', '0727100200', 'jamboc92@gmail.com', 'Strada Scolii', 900000);
+insert into client
+values(150001, 'Sirbu', 'Ionut', '0727200300', 'alexs2001@gmail.com', 'B-dul Iuliu Maniu', 900001);
+insert into client
+values(150002, 'Robert', 'Lewandovski', '0727500500', 'rl9@gmail.com', 'Strada Prozna', 900002);
+insert into client
+values(150003, 'Sergio', 'Ramos', '0727100111', 'sr4@gmail.com', 'Strada Puerta del Sol', 900003);
+insert into client
+values(150004, 'Arjen', 'Robben', '0727502378', 'ar10@gmail.com', 'Strada Rockin', 900004);
+
+-- select sysdate();
+-- formatul: 2022-01-21
+
+
+insert into comanda
+values(850000, 150000, '2022-01-15', '2022-01-17');
+insert into comanda
+values(850001, 150001, '2022-01-10', '2022-01-11');
+insert into comanda
+values(850002, 150002, '2022-01-12', '2022-01-25');
+insert into comanda
+values(850003, 150003, '2022-01-14', '2022-01-21');
+insert into comanda
+values(850004, 150004, '2022-01-05', '2022-01-12');
+
+insert into firma_de_livrat
+values (450000, 'FanCourier RO', 850000);
+insert into firma_de_livrat
+values (450001, 'NemoExpress', 850001);
+insert into firma_de_livrat
+values (450002, 'FanCourier INT', 850002);
+insert into firma_de_livrat
+values (450003, 'DHL', 850003);
+insert into firma_de_livrat
+values (450004, 'Pegasus', 850004);
+
+insert into plasat
+values (500000, 850000);
+insert into plasat
+values (500001, 850001);
+insert into plasat
+values (500002, 850002);
+insert into plasat
+values (500003, 850003);
+insert into plasat
+values (500004, 850004);
+insert into plasat
+values (500001, 850000);
+insert into plasat
+values (500002, 850000);
+
+
+
